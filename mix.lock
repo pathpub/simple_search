@@ -1,0 +1,3 @@
+%{
+  "stemmer": {:git, "https://github.com/fredwu/stemmer.git", "4a96c356e0d9bfb2a2b03ebd4eac03371bf9067a", [tag: "v1.2.0"]},
+}
