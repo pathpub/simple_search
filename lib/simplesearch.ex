@@ -25,6 +25,10 @@ defmodule SimpleSearch do
     :mnesia.start()
   end
 
+  def new_segment() do
+    {%{}, %{}}
+  end
+
   @doc """
   """
   def index_all(segment, documents) do
