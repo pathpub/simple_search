@@ -84,12 +84,12 @@ defmodule SimpleSearch do
 
   @spec write_all(segment()) :: :ok | {:error, any()}
   def write_all({unigram_idx, bigram_idx} = _segment) do
-    Enum.each(unigram_idx, fn e ->
-      :mnesia.dirty_write(InvertedIndex, e)
+    Enum.each(unigram_idx, fn {term, docs} ->
+      :mnesia.dirty_write({InvertedIndex, term, docs})
     end)
 
-    Enum.each(bigram_idx, fn e ->
-      :mnesia.dirty_write(InvertedIndexBigrams, e)
+    Enum.each(bigram_idx, fn {term, docs} ->
+      :mnesia.dirty_write({InvertedIndexBigrams, term, docs})
     end)
   end
 
@@ -98,10 +98,10 @@ defmodule SimpleSearch do
     {:atomic, unigram_idx} =
       :mnesia.transaction(fn ->
         :mnesia.foldl(
-          fn rec, acc ->
-            [rec | acc]
+          fn {_table, term, docs}, acc ->
+            Map.put(acc, term, docs)
           end,
-          [],
+          %{},
           InvertedIndex
         )
       end)
@@ -109,10 +109,10 @@ defmodule SimpleSearch do
     {:atomic, bigram_idx} =
       :mnesia.transaction(fn ->
         :mnesia.foldl(
-          fn rec, acc ->
-            [rec | acc]
+          fn {_table, term, docs}, acc ->
+            Map.put(acc, term, docs)
           end,
-          [],
+          %{},
           InvertedIndexBigrams
         )
       end)
