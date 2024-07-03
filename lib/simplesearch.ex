@@ -68,48 +68,58 @@ defmodule SimpleSearch do
     String.replace(document, ~r/[[:punct:]]/, " ")
   end
 
-  @spec search({any(), any()}, binary()) :: list()
+  @spec unigrams2bigrams([String.t()]) :: [String.t()]
+  def unigrams2bigrams(unigrams) do
+    Enum.chunk_every(unigrams, 2, 1, :discard)
+    |> Enum.map(fn [a, b] -> "#{a}_#{b}" end)
+  end
+
+  # returns a desc sorted list of {doc_id, score}
+  @spec search({any(), any()}, binary()) :: [{integer(), integer()}]
   def search(segment, query) do
     {unigram_idx, bigram_idx} = segment
 
     unigram_terms = doc2tokens(query)
-    bigram_terms = Enum.chunk_every(unigram_terms, 2, 1, :discard)
+    bigram_terms = unigrams2bigrams(unigram_terms)
 
-    all_matches =
-      Enum.map(unigram_terms, fn term ->
-        Map.get(unigram_idx, term, MapSet.new())
-      end)
-
+    # get all the matching doc_ids for each term
     unigram_matches =
-      if Enum.empty?(all_matches) do
-        []
-      else
-        Enum.reduce(
-          all_matches,
-          fn e, acc ->
-            MapSet.intersection(e, acc)
-          end
-        )
-      end
-
-    all_matches =
-      Enum.map(bigram_terms, fn term ->
-        Map.get(bigram_idx, term, MapSet.new())
+      Enum.flat_map(unigram_terms, fn term ->
+        MapSet.to_list(Map.get(unigram_idx, term, MapSet.new()))
       end)
 
-    # bigrams should be used for scoring in the future
-    _bigram_matches =
-      if Enum.empty?(all_matches) do
-        []
+    # score matches
+    doc_scores =
+      if Enum.empty?(unigram_matches) do
+        %{}
       else
         Enum.reduce(
-          all_matches,
+          unigram_matches,
+          %{},
           fn e, acc ->
-            MapSet.intersection(e, acc)
+            Map.update(acc, e, 1, fn count -> count + 1 end)
           end
         )
       end
 
-    MapSet.to_list(unigram_matches)
+    bigram_matches =
+      Enum.flat_map(bigram_terms, fn term ->
+        MapSet.to_list(Map.get(bigram_idx, term, MapSet.new()))
+      end)
+
+    doc_scores =
+      if Enum.empty?(bigram_matches) do
+        doc_scores
+      else
+        Enum.reduce(
+          bigram_matches,
+          doc_scores,
+          fn e, acc ->
+            Map.update(acc, e, 2, fn count -> count + 2 end)
+          end
+        )
+      end
+
+    Enum.sort_by(doc_scores, fn {_key, value} -> value end, :desc)
   end
 end

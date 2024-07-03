@@ -14,10 +14,10 @@ defmodule SimpleSearchTest do
   test "indexes and queries" do
     segment = SimpleSearchFixtures.create_segment()
 
-    assert SimpleSearch.search(segment, "Perplexity.ai") == [2]
-    assert MapSet.new(SimpleSearch.search(segment, "run")) == MapSet.new([2, 3])
-    assert MapSet.new(SimpleSearch.search(segment, "runs")) == MapSet.new([2, 3])
-    assert MapSet.new(SimpleSearch.search(segment, "running")) == MapSet.new([2, 3])
+    assert SimpleSearch.search(segment, "Perplexity.ai") == [{2, 4}]
+    assert MapSet.new(SimpleSearch.search(segment, "run")) == MapSet.new([{2, 1}, {3, 1}])
+    assert MapSet.new(SimpleSearch.search(segment, "runs")) == MapSet.new([{2, 1}, {3, 1}])
+    assert MapSet.new(SimpleSearch.search(segment, "running")) == MapSet.new([{2, 1}, {3, 1}])
   end
 
   test "saves and loads index" do
