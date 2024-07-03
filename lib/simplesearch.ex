@@ -15,20 +15,6 @@ defmodule SimpleSearch do
 
   @type segment :: {map(), map()}
 
-  @spec initialize() :: {:aborted, any()} | {:atomic, :ok}
-  def initialize() do
-    :mnesia.stop()
-    :mnesia.create_schema([node()])
-    :mnesia.start()
-    :mnesia.create_table(InvertedIndex, attributes: [:term, :docs])
-    :mnesia.create_table(InvertedIndexBigrams, attributes: [:term, :docs])
-  end
-
-  @spec start() :: :ok | {:error, any()}
-  def start() do
-    :mnesia.start()
-  end
-
   @spec new_segment() :: segment()
   def new_segment() do
     {%{}, %{}}
@@ -82,45 +68,6 @@ defmodule SimpleSearch do
     String.replace(document, ~r/[[:punct:]]/, " ")
   end
 
-  @spec write_all(segment()) :: :ok | {:error, any()}
-  def write_all({unigram_idx, bigram_idx} = _segment) do
-    Enum.each(unigram_idx, fn {term, docs} ->
-      :mnesia.dirty_write({InvertedIndex, term, docs})
-    end)
-
-    Enum.each(bigram_idx, fn {term, docs} ->
-      :mnesia.dirty_write({InvertedIndexBigrams, term, docs})
-    end)
-  end
-
-  @spec read_all() :: segment() | {:aborted, any()}
-  def read_all() do
-    {:atomic, unigram_idx} =
-      :mnesia.transaction(fn ->
-        :mnesia.foldl(
-          fn {_table, term, docs}, acc ->
-            Map.put(acc, term, docs)
-          end,
-          %{},
-          InvertedIndex
-        )
-      end)
-
-    {:atomic, bigram_idx} =
-      :mnesia.transaction(fn ->
-        :mnesia.foldl(
-          fn {_table, term, docs}, acc ->
-            Map.put(acc, term, docs)
-          end,
-          %{},
-          InvertedIndexBigrams
-        )
-      end)
-
-    {unigram_idx, bigram_idx}
-  end
-
-  # TODO: ranking based on term frequency and bigram matches
   @spec search({any(), any()}, binary()) :: list()
   def search(segment, query) do
     {unigram_idx, bigram_idx} = segment

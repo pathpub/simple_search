@@ -19,4 +19,16 @@ defmodule SimpleSearchTest do
     assert MapSet.new(SimpleSearch.search(segment, "runs")) == MapSet.new([2, 3])
     assert MapSet.new(SimpleSearch.search(segment, "running")) == MapSet.new([2, 3])
   end
+
+  test "saves and loads index" do
+    segment = SimpleSearchFixtures.create_segment()
+
+    Serializer.initialize()
+    Serializer.save(segment)
+    segment2 = Serializer.load()
+
+    # :timer.sleep(30_000)
+
+    assert segment == segment2
+  end
 end
