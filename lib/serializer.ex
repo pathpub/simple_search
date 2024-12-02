@@ -14,7 +14,7 @@ defmodule Serializer do
   end
 
   @spec save(SimpleSearch.segment()) :: :ok | {:error, any()}
-  def save({unigram_idx, bigram_idx} = _segment) do
+  def save({unigram_idx, bigram_idx, _trie} = _segment) do
     Enum.each(unigram_idx, fn {term, docs} ->
       :mnesia.dirty_write({InvertedIndex, term, docs})
     end)
@@ -26,13 +26,15 @@ defmodule Serializer do
 
   @spec load() :: SimpleSearch.segment() | {:aborted, any()}
   def load() do
-    {:atomic, unigram_idx} =
+    {:atomic, {unigram_idx, trie}} =
       :mnesia.transaction(fn ->
         :mnesia.foldl(
-          fn {_table, term, docs}, acc ->
-            Map.put(acc, term, docs)
+          fn {_table, term, docs}, {acc, trie} ->
+            acc = Map.put(acc, term, docs)
+            trie = Trieval.insert(trie, term)
+            {acc, trie}
           end,
-          %{},
+          {%{}, Trieval.new()},
           InvertedIndex
         )
       end)
@@ -48,6 +50,6 @@ defmodule Serializer do
         )
       end)
 
-    {unigram_idx, bigram_idx}
+    {unigram_idx, bigram_idx, trie}
   end
 end

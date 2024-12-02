@@ -1,3 +1,4 @@
 %{
   "stemmer": {:git, "https://github.com/fredwu/stemmer.git", "4a96c356e0d9bfb2a2b03ebd4eac03371bf9067a", [tag: "v1.2.0"]},
+  "trieval": {:git, "https://github.com/pathpub/trieval.git", "3e7491a8fdd2b76f9ec8f07a0a478905c884cc16", [tag: "v1.0.0"]},
 }

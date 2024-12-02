@@ -13,11 +13,12 @@ defmodule SimpleSearch do
     SimpleSearch.search(segment, "your search query")
   """
 
-  @type segment :: {map(), map()}
+  # unigrams, bigrams, trie
+  @type segment :: {map(), map(), map()}
 
   @spec new_segment() :: segment()
   def new_segment() do
-    {%{}, %{}}
+    {%{}, %{}, Trieval.new()}
   end
 
   @spec index_all(segment(), [{integer(), String.t()}]) :: segment()
@@ -32,7 +33,12 @@ defmodule SimpleSearch do
     unigrams = doc2tokens(text)
     bigrams = Enum.chunk_every(unigrams, 2, 1, :discard)
 
-    {unigram_index, bigram_index} = segment
+    {unigram_index, bigram_index, trie} = segment
+
+    trie =
+      Enum.reduce(unigrams, trie, fn token, trie ->
+        Trieval.insert(trie, token)
+      end)
 
     unigram_index =
       Enum.reduce(unigrams, unigram_index, fn token, unigram_index ->
@@ -50,7 +56,7 @@ defmodule SimpleSearch do
         end)
       end)
 
-    {unigram_index, bigram_index}
+    {unigram_index, bigram_index, trie}
   end
 
   @spec doc2tokens(String.t()) :: [String.t()]
@@ -74,13 +80,35 @@ defmodule SimpleSearch do
     |> Enum.map(fn [a, b] -> "#{a}_#{b}" end)
   end
 
-  # returns a desc sorted list of {doc_id, score}
-  @spec search({any(), any()}, binary()) :: [{integer(), integer()}]
-  def search(segment, query) do
-    {unigram_idx, bigram_idx} = segment
+  @spec suggest({any(), any(), any()}, binary(), integer()) :: [{integer(), integer()}]
+  def suggest(segment, query, max \\ 5) do
+    {_unigram_idx, _bigram_idx, trie} = segment
 
     unigram_terms = doc2tokens(query)
     bigram_terms = unigrams2bigrams(unigram_terms)
+
+    [last | rest] = Enum.reverse(unigram_terms)
+
+    additional_terms = Trieval.prefix(trie, last) |> Enum.take(max)
+
+    unigram_terms = Enum.reverse(rest) ++ additional_terms
+
+    IO.inspect(unigram_terms)
+
+    _search(segment, unigram_terms, bigram_terms)
+  end
+
+  # returns a desc sorted list of {doc_id, score}
+  @spec search({any(), any(), any()}, binary()) :: [{integer(), integer()}]
+  def search(segment, query) do
+    unigram_terms = doc2tokens(query)
+    bigram_terms = unigrams2bigrams(unigram_terms)
+
+    _search(segment, unigram_terms, bigram_terms)
+  end
+
+  def _search(segment, unigram_terms, bigram_terms) do
+    {unigram_idx, bigram_idx, _trie} = segment
 
     # get all the matching doc_ids for each term
     unigram_matches =

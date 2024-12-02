@@ -29,7 +29,8 @@ defmodule Simplesearch.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
-      {:stemmer, git: "https://github.com/fredwu/stemmer.git", tag: "v1.2.0"}
+      {:stemmer, git: "https://github.com/fredwu/stemmer.git", tag: "v1.2.0"},
+      {:trieval, git: "https://github.com/pathpub/trieval.git", tag: "v1.0.0"},
     ]
   end
 end
