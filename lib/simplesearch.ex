@@ -13,12 +13,12 @@ defmodule SimpleSearch do
     SimpleSearch.search(segment, "your search query")
   """
 
-  # unigrams, bigrams, trie
-  @type segment :: {map(), map(), map()}
+  # unigrams, bigrams, unstemmed_unigrams, trie
+  @type segment :: {map(), map(), map(), map()}
 
   @spec new_segment() :: segment()
   def new_segment() do
-    {%{}, %{}, Trieval.new()}
+    {%{}, %{}, %{}, Trieval.new()}
   end
 
   @spec index_all(segment(), [{integer(), String.t()}]) :: segment()
@@ -30,13 +30,21 @@ defmodule SimpleSearch do
 
   @spec index_one(segment(), {integer(), String.t()}) :: segment()
   def index_one(segment, {doc_id, text}) do
+    unstemmed_unigrams = doc2tokens(text, false)
     unigrams = doc2tokens(text)
     bigrams = Enum.chunk_every(unigrams, 2, 1, :discard)
 
-    {unigram_index, bigram_index, trie} = segment
+    {unigram_index, bigram_index, unstemmed_unigram_index, trie} = segment
+
+    unstemmed_unigram_index =
+      Enum.reduce(unstemmed_unigrams, unstemmed_unigram_index, fn token, unigram_index ->
+        Map.update(unigram_index, token, MapSet.new([doc_id]), fn ms ->
+          MapSet.put(ms, doc_id)
+        end)
+      end)
 
     trie =
-      Enum.reduce(unigrams, trie, fn token, trie ->
+      Enum.reduce(unstemmed_unigrams, trie, fn token, trie ->
         Trieval.insert(trie, token)
       end)
 
@@ -56,17 +64,23 @@ defmodule SimpleSearch do
         end)
       end)
 
-    {unigram_index, bigram_index, trie}
+    {unigram_index, bigram_index, unstemmed_unigram_index, trie}
   end
 
-  @spec doc2tokens(String.t()) :: [String.t()]
-  def doc2tokens(document) do
-    String.downcase(document)
-    |> strip_punctuation()
-    |> String.split()
-    |> Enum.map(fn token ->
-      Stemmer.stem(token)
-    end)
+  @spec doc2tokens(String.t(), boolean()) :: [String.t()]
+  def doc2tokens(document, stem? \\ true) do
+    tokens =
+      String.downcase(document)
+      |> strip_punctuation()
+      |> String.split()
+
+    if stem? do
+      Enum.map(tokens, fn token ->
+        Stemmer.stem(token)
+      end)
+    else
+      tokens
+    end
   end
 
   @spec strip_punctuation(String.t()) :: String.t()
@@ -82,9 +96,9 @@ defmodule SimpleSearch do
 
   @spec suggest({any(), any(), any()}, binary(), integer()) :: [{integer(), integer()}]
   def suggest(segment, query, max \\ 5) do
-    {_unigram_idx, _bigram_idx, trie} = segment
+    {_unigram_idx, _bigram_idx, _unstemmed_unigram_idx, trie} = segment
 
-    unigram_terms = doc2tokens(query)
+    unigram_terms = doc2tokens(query, false)
     bigram_terms = unigrams2bigrams(unigram_terms)
 
     [last | rest] = Enum.reverse(unigram_terms)
@@ -93,13 +107,11 @@ defmodule SimpleSearch do
 
     unigram_terms = Enum.reverse(rest) ++ additional_terms
 
-    IO.inspect(unigram_terms)
-
     _search(segment, unigram_terms, bigram_terms)
   end
 
   # returns a desc sorted list of {doc_id, score}
-  @spec search({any(), any(), any()}, binary()) :: [{integer(), integer()}]
+  @spec search({any(), any(), any(), any()}, binary()) :: [{integer(), integer()}]
   def search(segment, query) do
     unigram_terms = doc2tokens(query)
     bigram_terms = unigrams2bigrams(unigram_terms)
@@ -108,7 +120,7 @@ defmodule SimpleSearch do
   end
 
   def _search(segment, unigram_terms, bigram_terms) do
-    {unigram_idx, bigram_idx, _trie} = segment
+    {unigram_idx, bigram_idx, _unstemmed_unigram_idx, _trie} = segment
 
     # get all the matching doc_ids for each term
     unigram_matches =

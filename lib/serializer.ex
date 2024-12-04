@@ -6,6 +6,7 @@ defmodule Serializer do
     :mnesia.start()
     :mnesia.create_table(InvertedIndex, attributes: [:term, :docs])
     :mnesia.create_table(InvertedIndexBigrams, attributes: [:term, :docs])
+    :mnesia.create_table(InvertedIndexUnstemmed, attributes: [:term, :docs])
   end
 
   @spec start() :: :ok | {:error, any()}
@@ -14,7 +15,7 @@ defmodule Serializer do
   end
 
   @spec save(SimpleSearch.segment()) :: :ok | {:error, any()}
-  def save({unigram_idx, bigram_idx, _trie} = _segment) do
+  def save({unigram_idx, bigram_idx, unstemmed_unigram_idx, _trie} = _segment) do
     Enum.each(unigram_idx, fn {term, docs} ->
       :mnesia.dirty_write({InvertedIndex, term, docs})
     end)
@@ -22,19 +23,21 @@ defmodule Serializer do
     Enum.each(bigram_idx, fn {term, docs} ->
       :mnesia.dirty_write({InvertedIndexBigrams, term, docs})
     end)
+
+    Enum.each(unstemmed_unigram_idx, fn {term, docs} ->
+      :mnesia.dirty_write({InvertedIndexUnstemmed, term, docs})
+    end)
   end
 
   @spec load() :: SimpleSearch.segment() | {:aborted, any()}
   def load() do
-    {:atomic, {unigram_idx, trie}} =
+    {:atomic, unigram_idx} =
       :mnesia.transaction(fn ->
         :mnesia.foldl(
-          fn {_table, term, docs}, {acc, trie} ->
-            acc = Map.put(acc, term, docs)
-            trie = Trieval.insert(trie, term)
-            {acc, trie}
+          fn {_table, term, docs}, acc ->
+            Map.put(acc, term, docs)
           end,
-          {%{}, Trieval.new()},
+          %{},
           InvertedIndex
         )
       end)
@@ -50,6 +53,19 @@ defmodule Serializer do
         )
       end)
 
-    {unigram_idx, bigram_idx, trie}
+    {:atomic, {unstemmed_unigram_idx, trie}} =
+      :mnesia.transaction(fn ->
+        :mnesia.foldl(
+          fn {_table, term, docs}, {acc, trie} ->
+            acc = Map.put(acc, term, docs)
+            trie = Trieval.insert(trie, term)
+            {acc, trie}
+          end,
+          {%{}, Trieval.new()},
+          InvertedIndexUnstemmed
+        )
+      end)
+
+    {unigram_idx, bigram_idx, unstemmed_unigram_idx, trie}
   end
 end
