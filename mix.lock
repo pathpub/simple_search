@@ -1,4 +1,4 @@
 %{
   "stemmer": {:git, "https://github.com/fredwu/stemmer.git", "4a96c356e0d9bfb2a2b03ebd4eac03371bf9067a", [tag: "v1.2.0"]},
-  "trieval": {:git, "https://github.com/pathpub/trieval.git", "3e7491a8fdd2b76f9ec8f07a0a478905c884cc16", [tag: "v1.0.0"]},
+  "trieval": {:hex, :trieval, "1.1.0", "3581e4ef4016e8375dc2c7b54499c5affebcb29957d1a03da3fd50f0f0ab6311", [:mix], [], "hexpm", "f698c38273ce5663702c7a58e60748bd529997ee702eef0682f7f6dbdc736929"},
 }
