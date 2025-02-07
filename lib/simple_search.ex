@@ -1,6 +1,6 @@
 defmodule SimpleSearch do
   @moduledoc """
-  Documentation for `Simplesearch`.
+  Documentation for `SimpleSearch`.
 
   Given a list of documents =
   [{1, "some text here"},
