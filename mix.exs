@@ -5,7 +5,7 @@ defmodule SimpleSearch.MixProject do
     [
       app: :simple_search,
       version: "0.1.0",
-      elixir: "~> 1.16",
+      elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env())
@@ -27,6 +27,9 @@ defmodule SimpleSearch.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:earmark, "~> 1.4", only: :dev},
+      {:ex_doc, "~> 0.36", only: :dev, runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:stemmer, git: "https://github.com/fredwu/stemmer.git", tag: "v1.2.0"},
       {:trieval, "~> 1.1"}
     ]
