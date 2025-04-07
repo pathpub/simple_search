@@ -94,7 +94,7 @@ defmodule SimpleSearch do
     |> Enum.map(fn [a, b] -> "#{a}_#{b}" end)
   end
 
-  @spec suggest({any(), any(), any()}, binary(), integer()) :: [{integer(), integer()}]
+  @spec suggest(segment(), binary(), integer()) :: [any()]
   def suggest(segment, query, max \\ 5) do
     {_unigram_idx, _bigram_idx, _unstemmed_unigram_idx, trie} = segment
 
