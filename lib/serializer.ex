@@ -1,4 +1,9 @@
 defmodule Serializer do
+  @moduledoc """
+    This module handles the serialization and deserialization of the inverted
+    index.  This is an asynchronous process and otherwise the assumption is
+    regular operations for simple search happen in-memory.
+  """
   @spec initialize() :: {:aborted, any()} | {:atomic, :ok}
   def initialize() do
     :mnesia.stop()
