@@ -8,7 +8,7 @@ defmodule SimpleSearch.MixProject do
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      elixirc_paths: elixirc_paths(Mix.env())
+      elixirc_paths: elixirc_paths(Mix.env()),
     ]
   end
 
@@ -16,7 +16,7 @@ defmodule SimpleSearch.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      included_applications: [:mnesia]
+      included_applications: [:mnesia],
     ]
   end
 
@@ -31,7 +31,11 @@ defmodule SimpleSearch.MixProject do
       {:ex_doc, "~> 0.36", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:stemmer, git: "https://github.com/fredwu/stemmer.git", tag: "v1.2.0"},
-      {:trieval, "~> 1.1"}
+      {:trieval, "~> 1.1"},
+
+      # Dev-only
+      {:freedom_formatter, "~> 2.1", only: [:dev, :test]},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
     ]
   end
 end
