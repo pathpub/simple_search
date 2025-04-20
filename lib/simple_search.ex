@@ -21,14 +21,14 @@ defmodule SimpleSearch do
     {%{}, %{}, %{}, Trieval.new()}
   end
 
-  @spec index_all(segment(), [{integer(), String.t()}]) :: segment()
+  @spec index_all(segment(), [{binary(), String.t()}]) :: segment()
   def index_all(segment, documents) do
     Enum.reduce(documents, segment, fn document, segment ->
       SimpleSearch.index_one(segment, document)
     end)
   end
 
-  @spec index_one(segment(), {integer(), String.t()}) :: segment()
+  @spec index_one(segment(), {binary(), String.t()}) :: segment()
   def index_one(segment, {doc_id, text}) do
     unstemmed_unigrams = doc2tokens(text, false)
     unigrams = doc2tokens(text)
