@@ -2,22 +2,13 @@ defmodule SimpleSearchTest do
   use ExUnit.Case
   doctest SimpleSearch
 
-  def create_test_segment() do
-    SimpleSearch.new_segment()
-    |> SimpleSearch.index_all([
-      {1, "The cat is a tumbler"},
-      {2, "I'm running Perplexity.ai"},
-      {3, "Where do we store the test runs?"},
-    ])
-  end
-
   test "indexes and queries" do
     segment = SimpleSearchFixtures.create_segment()
 
-    assert SimpleSearch.search(segment, "Perplexity.ai") == [{2, 4}]
-    assert MapSet.new(SimpleSearch.search(segment, "run")) == MapSet.new([{2, 1}, {3, 1}])
-    assert MapSet.new(SimpleSearch.search(segment, "runs")) == MapSet.new([{2, 1}, {3, 1}])
-    assert MapSet.new(SimpleSearch.search(segment, "running")) == MapSet.new([{2, 1}, {3, 1}])
+    assert SimpleSearch.search(segment, "Path.pub") == [{2, 4}]
+    assert MapSet.new(SimpleSearch.search(segment, "run")) == MapSet.new([{3, 1}, {4, 1}])
+    assert MapSet.new(SimpleSearch.search(segment, "runs")) == MapSet.new([{3, 1}, {4, 1}])
+    assert MapSet.new(SimpleSearch.search(segment, "running")) == MapSet.new([{3, 1}, {4, 1}])
   end
 
   test "saves and loads index" do
